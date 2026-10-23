@@ -537,28 +537,51 @@
     if (S.cargo === 'pres') {
       var d2 = S.uf2[uf], d1 = S.uf1[uf];
       var a = parFD(d2), b = parFD(d1);
-      h += '<div class="text-[11px] text-slate-400 mb-2 num">2º turno · ' + (d2 ? pct(d2.pst) + ' apurado · ' + (d2.ht || '') : 'aguardando') + '</div>';
-      var ex = function (atual, ant, vAtual, vAnt) {
-        if (!d1) return '';
-        return '<span>1º turno: ' + pct(ant) + ' (' + milhoes(vAnt) + ')</span>';
+      var gradeGeral = function (dd) {
+        return '<div class="grid grid-cols-3 gap-2 mt-3 text-center text-[11px]">' +
+          '<div><div class="text-slate-500">Comparec.</div><div class="num font-semibold">' + pct(dd.pc, 1) + '</div></div>' +
+          '<div><div class="text-slate-500">Brancos</div><div class="num font-semibold">' + pct(dd.pvb, 1) + '</div></div>' +
+          '<div><div class="text-slate-500">Nulos</div><div class="num font-semibold">' + pct(dd.ptvn, 1) + '</div></div></div>';
       };
-      h += barraCand(E, cand(d2, E.n), ex(a.f, b.f, a.fv, b.fv));
-      h += barraCand(D, cand(d2, D.n), ex(a.l, b.l, a.lv, b.lv));
-      if (temVotos(d2) && d1) {
-        h += '<div class="grid grid-cols-2 gap-2 mt-3 text-center">' +
-          blocoVar(E, a.f - b.f, a.fv - b.fv) + blocoVar(D, a.l - b.l, a.lv - b.lv) + '</div>' +
-          '<p class="text-[10px] text-slate-500 mt-2">Variação em pontos percentuais dos votos válidos e em votos, contra o resultado final do 1º turno no estado. Enquanto a apuração não termina, os votos do 2º turno ainda estão subindo.</p>';
+      if (S.modo === 't1') {
+        // Aba 1º turno: resultado final do 1º turno no estado
+        h += '<div class="text-[11px] text-slate-400 mb-2 num">1º turno · resultado final</div>';
+        if (!d1) h += '<div class="text-sm text-slate-400">Carregando...</div>';
+        else {
+          h += barraCand(E, cand(d1, E.n), '');
+          h += barraCand(D, cand(d1, D.n), '');
+          h += gradeGeral(d1);
+        }
+      } else {
+        h += '<div class="text-[11px] text-slate-400 mb-2 num">2º turno · ' + (d2 ? pct(d2.pst) + ' apurado' + (d2.ht ? ' · ' + d2.ht : '') : 'aguardando') + '</div>';
+        if (!temVotos(d2)) {
+          // Antes dos primeiros votos: aviso + referência do 1º turno
+          h += '<div class="rounded-lg bg-slate-900 border border-slate-800 px-3 py-2.5 text-sm text-slate-300">Aguardando os primeiros votos do 2º turno.</div>';
+          if (d1) {
+            h += '<div class="text-[11px] uppercase tracking-wider text-slate-500 mt-3 mb-1.5">Referência: 1º turno no estado</div>' +
+              linhaRef(E, b.f, b.fv) + linhaRef(D, b.l, b.lv);
+          }
+        } else {
+          var ex = function (atual, ant, vAtual, vAnt) {
+            if (!d1) return '';
+            return '<span>1º turno: ' + pct(ant) + ' (' + milhoes(vAnt) + ')</span>';
+          };
+          h += barraCand(E, cand(d2, E.n), ex(a.f, b.f, a.fv, b.fv));
+          h += barraCand(D, cand(d2, D.n), ex(a.l, b.l, a.lv, b.lv));
+          if (d1) {
+            h += '<div class="grid grid-cols-2 gap-2 mt-3 text-center">' +
+              blocoVar(E, a.f - b.f, a.fv - b.fv) + blocoVar(D, a.l - b.l, a.lv - b.lv) + '</div>' +
+              '<p class="text-[10px] text-slate-500 mt-2">Variação em pontos percentuais dos votos válidos e em votos, contra o resultado final do 1º turno no estado. Enquanto a apuração não termina, os votos do 2º turno ainda estão subindo.</p>';
+          }
+          h += gradeGeral(d2);
+        }
       }
-      if (d2) h += '<div class="grid grid-cols-3 gap-2 mt-3 text-center text-[11px]">' +
-        '<div><div class="text-slate-500">Comparec.</div><div class="num font-semibold">' + pct(d2.pc, 1) + '</div></div>' +
-        '<div><div class="text-slate-500">Brancos</div><div class="num font-semibold">' + pct(d2.pvb, 1) + '</div></div>' +
-        '<div><div class="text-slate-500">Nulos</div><div class="num font-semibold">' + pct(d2.ptvn, 1) + '</div></div></div>';
     } else {
       var g = govDados(uf);
       var d = g.d;
       if (!d) { h += '<div class="text-sm text-slate-400">Carregando...</div>'; }
       else {
-        var status = g.turno === 2 ? '2º turno · ' + pct(d.pst) + ' apurado · ' + (d.ht || '') : (eleitoDe(d) ? 'Decidido no 1º turno' : (g.tem2 ? '1º turno (foi para o 2º turno)' : '1º turno'));
+        var status = g.turno === 2 ? '2º turno · ' + pct(d.pst) + ' apurado' + (d.ht ? ' · ' + d.ht : '') : (eleitoDe(d) ? 'Decidido no 1º turno' : (g.tem2 ? '1º turno (foi para o 2º turno)' : '1º turno'));
         h += '<div class="text-[11px] text-slate-400 mb-2 num">' + status + '</div>';
         var lista = g.turno === 2 ? d.cands.slice(0, 2) : d.cands.slice(0, 3);
         lista.forEach(function (c, i) {
@@ -573,6 +596,9 @@
     h += '<div class="mt-3"><button type="button" data-zap="estado" class="zap w-full">' + ICONE_ZAP + 'Compartilhar ' + esc(NOMES[uf]) + '</button></div>';
     el.innerHTML = h;
     $('fechaDet').onclick = function () { selecionar(null); };
+  }
+  function linhaRef(info, p, v) {
+    return '<div class="flex items-center gap-1.5 text-xs py-0.5"><span class="w-2 h-2 rounded-full" style="background:' + info.cor + '"></span><span class="text-slate-300">' + esc(info.nome) + '</span><span class="num font-semibold ml-auto" style="color:' + info.claro + '">' + pct(p) + '</span><span class="num text-slate-500 pl-3">' + milhoes(v) + '</span></div>';
   }
   function blocoVar(info, pp, votos) {
     return '<div class="rounded-lg bg-slate-900 border border-slate-800 py-2"><div class="text-[10px] text-slate-500 truncate px-1">' + esc(info.nome) + ' vs 1º turno</div>' +
